@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org/" lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>會員登入</title>
+
+  <!-- 導入Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+
+  <!-- 導入jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <style>
+    body {
+      background-color: white; /* 恢復白色背景 */
+      color: black;
+    }
+
+    .form-signin {
+      max-width: 330px;
+      padding: 15px;
+      margin: auto;
+      background-color: #dee2e6; /* 設置表單區域為更深的灰色背景 */
+      border-radius: 10px;
+      box-shadow: 0px 0px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-warning {
+      background-color: #ffc107;
+      color: black;
+      border: none;
+    }
+
+    .modal-header {
+      background-color: #ffc107;
+      color: black;
+    }
+
+    .modal-body {
+      font-size: 16px;
+      color: #856404;
+    }
+
+    .form-signin input {
+      background-color: #ffffff;
+      border: none;
+      color: black;
+    }
+
+    .form-signin input::placeholder {
+      color: #6c757d;
+    }
+
+    .form-signin label {
+      color: #495057;
+    }
+
+    header .custom-icon {
+      width: 40px;
+      height: 40px;
+      background-color: yellow;
+      border-radius: 50%;
+      display: inline-block;
+      text-align: center;
+      line-height: 40px;
+      font-size: 24px;
+      font-weight: bold;
+      color: black;
+    }
+
+    .alert.alert-warning {
+      background-color: transparent;
+      color: #856404;
+      border: none;
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <!-- 引入 userHeader -->
+    <div th:replace="~{layout/userLoginHeader}"></div>
+
+  <main class="form-signin">
+    <form id="loginForm" th:action="@{/login}" method="post">
+      <h1 class="h3 mb-3 fw-normal">會員登入</h1>
+      <div class="form-floating mb-3">
+        <input type="email" class="form-control" id="floatingInput" placeholder="name@example.com" name="userEmail" required>
+        <label for="floatingInput">電子郵件地址(帳號)</label>
+      </div>
+      <div class="form-floating mb-3">
+        <input type="password" class="form-control" id="floatingPassword" placeholder="Password" name="userPassword" required>
+        <label for="floatingPassword">密碼</label>
+      </div>
+
+      <button class="w-100 btn btn-lg btn-warning" type="submit">登入</button>
+      <hr>
+      <button class="w-100 btn btn-lg btn-warning" type="button" id="registerButton">立即註冊</button>
+      <p class="mt-5 mb-3 text-muted">&copy; 2022 Company, Inc</p>
+    </form>
+  </main>
+
+<!-- 已登入提示 -->
+<div class="modal fade" id="alreadyLoggedInModal" tabindex="-1" aria-labelledby="alreadyLoggedInModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="alreadyLoggedInModalLabel">已登入</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        您已經登入，將會自動跳轉到會員中心。
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" id="confirmRedirect">確定</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+   <!-- 錯誤模態框 -->
+  <div class="modal fade" id="loginErrorModal" tabindex="-1" aria-labelledby="loginErrorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="loginErrorModalLabel">登入錯誤</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          使用者名稱或密碼錯誤，請重新檢查您的帳號密碼。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登出成功的模態框 -->
+  <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="logoutModalLabel">登出成功</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          您已成功登出系統。
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="d-flex flex-wrap justify-content-between align-items-center py-3 my-4 border-top">
+    <div class="col-md-4 d-flex align-items-center">
+      <a href="/" class="mb-3 me-2 mb-md-0 text-muted text-decoration-none lh-1">
+        <svg class="bi" width="30" height="24">
+          <use xlink:href="#bootstrap"></use>
+        </svg>
+      </a>
+      <span class="text-muted">© 2024 Company, Inc</span>
+    </div>
+    <ul class="nav col-md-4 justify-content-end list-unstyled d-flex">
+      <li class="ms-3"><a class="text-muted" href="#"><i class="bi bi-twitter" style="font-size: 24px;"></i></a></li>
+      <li class="ms-3"><a class="text-muted" href="#"><i class="bi bi-instagram" style="font-size: 24px;"></i></a></li>
+      <li class="ms-3"><a class="text-muted" href="#"><i class="bi bi-facebook" style="font-size: 24px;"></i></a></li>
+    </ul>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    $(document).ready(function () {
+      $.ajax({
+        url: '/api/check-login',  // 检查用户登录状态的 API
+        method: 'GET',
+        success: function (isLoggedIn) {
+            if (isLoggedIn) {
+                // 如果已登录，显示提示对话框
+                var modal = new bootstrap.Modal(document.getElementById('alreadyLoggedInModal'));
+                modal.show();
+
+                // 点击对话框的确定按钮后，跳转到 memberCenter 页面
+                $('#confirmRedirect').on('click', function () {
+                    window.location.href = '/memberCenter';  // 已登录用户跳转到用户中心
+                });
+            }
+        },
+        error: function () {
+            console.error('Error checking login status.');
+        }
+    });
+        
+        // 点击登录页面链接时，如果已登录，显示提示框并阻止默认跳转
+    $('#loginPageLink').on('click', function (e) {
+        // 先通过 AJAX 检查用户是否已登录
+        $.ajax({
+            url: '/api/check-login',  // 检查用户登录状态的 API
+            method: 'GET',
+            success: function (isLoggedIn) {
+                if (isLoggedIn) {
+                    // 如果已登录，显示提示对话框
+                    var modal = new bootstrap.Modal(document.getElementById('alreadyLoggedInModal'));
+                    modal.show();
+                    
+                    // 点击对话框的确定按钮后，跳转到 memberCenter 页面
+                    $('#confirmRedirect').on('click', function () {
+                        window.location.href = '/memberCenter';  // 跳转到用户中心
+                    });
+
+                    // 阻止页面跳转
+                    e.preventDefault();
+                }
+            },
+            error: function () {
+                console.error('Error checking login status.');
+            }
+        });
+    });
+        
+      $('#loginForm').on('submit', function (e) {
+        e.preventDefault();
+
+        var userEmail = $('#floatingInput').val().trim();
+        var userPassword = $('#floatingPassword').val().trim();
+
+        if (!userEmail || !userPassword) {
+            alert('請填寫所有欄位');
+            return;
+          }
+
+        $.ajax({
+          url: '/login',
+          type: 'POST',
+          data: { userEmail: userEmail, userPassword: userPassword },
+          success: function (response) {
+            if (response === 'success') {
+              window.location.href = '/memberCenter'; // 登入成功後跳轉
+            } else {
+              var modal = new bootstrap.Modal(document.getElementById('loginErrorModal'));
+              modal.show();
+            }
+          },
+          error: function () {
+            var modal = new bootstrap.Modal(document.getElementById('loginErrorModal'));
+            modal.show();
+          }
+        });
+      });
+
+      document.getElementById('registerButton').addEventListener('click', function () {
+        window.location.href = '/register';
+      });
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+   <meta charset="UTF-8">
+   <title>我的會員中心</title>
+   <!-- Import Bootstrap CSS -->
+   <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+   <link th:href="@{/css/custom.css}" rel="stylesheet">
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+   <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+   <script th:src="@{/js/jquery.min.js}"></script>
+   
+   <style>
+       #mainContent {
+           width: 70%;
+           max-width: 1400px;
+           min-width: 900px;
+           margin: 0 auto;
+           padding: 32px;
+           border-radius: 10px;
+       }
+
+       .form-title {
+           font-size: 2rem;
+           font-weight: bold;
+           margin-bottom: 20px;
+           text-align: center;
+       }
+
+       .form-control {
+           width: 100%;
+           max-width: 1000px;
+           margin: 0 auto;
+       }
+
+       .btn-custom {
+           height: 50px;
+           font-size: 1.2rem;
+       }
+   </style>
+</head>
+<body>
+   <!-- 引入 userHeader -->
+   <div th:replace="~{layout/userHeader}"></div>
+
+   <!-- Flexbox -->
+   <div class="d-flex" style="height: 100vh;">
+       <!-- 引入側邊欄 -->
+       <div th:replace="~{layout/memberCenterSidebar}"></div>
+
+       <!-- 主要內容 -->
+       <div id="mainContent" class="p-4">
+           <h2 class="form-title">我的帳戶</h2>
+           <div id="contentArea">
+               <p>請繼續點選左側選單項目以編輯內容。</p>
+           </div>
+       </div>
+   </div>
+
+   <script>
+       const contentArea = document.getElementById('contentArea');
+       let userInfo = null; // 存放用戶資料的全域變數
+
+       document.addEventListener("DOMContentLoaded", () => {
+           const profileLink = document.getElementById("profileLink");
+           if (profileLink) {
+               profileLink.addEventListener("click", function (event) {
+                   event.preventDefault();
+                   loadProfileContent();
+               });
+           }
+           
+           const passwordupdate = document.getElementById("passwordupdate");
+           if (passwordupdate) {
+               passwordupdate.addEventListener("click", function (event) {
+                   event.preventDefault();
+                   loadPassword();
+               });
+           }
+           
+           
+           const paymentLink = document.getElementById("paymentLink");
+           if (paymentLink) {
+               paymentLink.addEventListener("click", function (event) {
+                   event.preventDefault();
+                   loadPaymentContent();
+               });
+           }
+           const addressLink = document.getElementById("addressLink");
+           if (addressLink) {
+               addressLink.addEventListener("click", function (event) {
+                   event.preventDefault();
+                   loadAddressContent();
+               });
+           }
+
+           loadProfileContent(); // 頁面加載時預設加載個人檔案
+       });
+
+       function loadProfileContent() {
+           fetch(`/loginData?timestamp=${new Date().getTime()}`)
+               .then(response => {
+                   if (!response.ok) {
+                       throw new Error("未登入，請先登入後再嘗試");
+                   }
+                   return response.json();
+               })
+               .then(data => {
+                   userInfo = data; // 將資料存入全域變數
+                   renderProfileForm(userInfo);
+               })
+               .catch(error => {
+                   console.error("加載失敗：", error);
+                   contentArea.innerHTML = `<p>無法加載個人資料，請稍後再試。</p>`;
+               });
+       }
+
+       function renderProfileForm(userInfo) {
+           contentArea.innerHTML = `
+               <h4 class="form-title">管理個人檔案</h4>
+               <form id="profileForm" class="needs-validation" novalidate style="max-width: 600px; margin: 0 auto;">
+    <div class="mb-3">
+        <h5>我的姓名</h5>
+        <div class="input-group">
+            <input type="text" class="form-control shadow-sm rounded" id="firstName" value="${userInfo.userName}" required>
+            <span class="input-group-text"><i class="bi bi-pencil-square"></i></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <h5>我的Email</h5>
+        <div class="input-group">
+            <input type="email" class="form-control shadow-sm rounded" id="email" value="${userInfo.userEmail}" readonly>
+            <span class="input-group-text"><i class="bi bi-x-circle-fill text-danger"></i></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <h5>我的生日</h5>
+        <div class="input-group">
+            <input type="text" class="form-control shadow-sm rounded" id="birthday" value="${userInfo.userBirthday}" readonly>
+            <span class="input-group-text"><i class="bi bi-x-circle-fill text-danger"></i></span>
+        </div>
+    </div>
+    <div class="mb-3">
+        <h5>我的電話</h5>
+        <div class="input-group">
+            <input type="text" class="form-control shadow-sm rounded" id="phone" value="${userInfo.userTel}" required>
+            <span class="input-group-text"><i class="bi bi-pencil-square"></i></span>
+        </div>
+    </div>
+    <button type="button" class="btn btn-primary btn-custom mt-3 w-100 shadow-sm rounded" onclick="updateMember()">
+        修改個人資料
+    </button>
+</form>
+           `;
+       }
+
+       function updateMember() {
+          const userName = document.getElementById("firstName").value.trim();
+    const userEmail = document.getElementById("email").value.trim();
+    const userTel = document.getElementById("phone").value.trim();
+    let userBirthday = document.getElementById("birthday").value.trim();
+
+           // 填充未修改欄位的值
+           const updatedMember = {
+                userName: userName || userInfo.userName,
+        userEmail: userEmail || userInfo.userEmail,
+        userBirthday: userBirthday || userInfo.userBirthday,
+        userTel: userTel || userInfo.userTel,
+           };
+
+           fetch("/memberCenter/profile/update", {
+               method: "PUT",
+               headers: { "Content-Type": "application/json" },
+               body: JSON.stringify(updatedMember)
+           })
+               .then(response => response.json())
+               .then(updatedData => {
+                   
+                   
+                   alert("資料更新成功！");
+                   loadProfileContent(); // 更新後重新加載內容
+                   
+                    // 更新按鈕名稱
+            		const mantleDropdown = document.getElementById("mantleDropdown");
+            		if (mantleDropdown) {
+                		mantleDropdown.textContent = updatedData.userName || "未知用戶";
+            }
+               })
+               .catch(error => {
+                   console.error("更新失敗：", error);
+                   alert("更新失敗，請稍後再試！");
+               });
+       }
+       
+       function loadPassword() {
+    contentArea.innerHTML = `
+        <h4 class="form-title">管理密碼</h4>
+        <form id="passwordForm" style="max-width: 600px; margin: 0 auto;">
+            <div class="mb-3">
+                <h5>我的舊密碼</h5>
+                <div class="input-group">
+                    <input type="password" class="form-control" id="oldPassword" placeholder="請輸入舊密碼" required>
+                    <button type="button" class="btn btn-outline-secondary toggle-password" data-target="oldPassword">
+                        顯示密碼
+                    </button>
+                </div>
+            </div>
+            
+            
+            <div id="newPasswordFields" style="display: none;">
+                <div class="mb-3">
+                     <h5>我的新密碼</h5>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="newPassword" placeholder="請輸入新密碼" required>
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="newPassword">
+                            顯示密碼
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                     <h5>確認新密碼</h5>
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="confirmPassword" placeholder="請再次輸入新密碼" required>
+                        <button type="button" class="btn btn-outline-secondary toggle-password" data-target="confirmPassword">
+                            顯示密碼
+                        </button>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-primary w-100" onclick="updatePassword()">確認更新</button>
+            </div>
+            <button type="button" class="btn btn-primary w-100" id="verifyOldPassword">下一步</button>
+        </form>
+    `;
+
+    document.getElementById("verifyOldPassword").addEventListener("click", verifyOldPassword);
+
+    // 添加事件監聽器來切換密碼顯示
+    document.querySelectorAll(".toggle-password").forEach(button => {
+        button.addEventListener("click", function () {
+            const targetId = this.getAttribute("data-target");
+            const passwordInput = document.getElementById(targetId);
+
+            if (passwordInput.type === "password") {
+                passwordInput.type = "text";
+                this.textContent = "隱藏密碼";
+            } else {
+                passwordInput.type = "password";
+                this.textContent = "顯示密碼";
+            }
+        });
+    });
+}
+
+function verifyOldPassword() {
+    const oldPassword = document.getElementById("oldPassword").value.trim();
+
+    fetch("/memberCenter/password/verify", {
+        method: "PUT", // 確保使用的是 PUT 方法
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ oldPassword: oldPassword }) // 確保傳遞 JSON 格式的數據
+    })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("舊密碼錯誤");
+            }
+            return response.text();
+        })
+        .then(() => {
+            // 顯示新密碼輸入欄位
+            document.getElementById("newPasswordFields").style.display = "block";
+            document.getElementById("verifyOldPassword").style.display = "none";
+        })
+        .catch(error => {
+            alert(error.message);
+        });
+}
+
+function updatePassword() {
+    const newPassword = document.getElementById("newPassword").value.trim();
+    const confirmPassword = document.getElementById("confirmPassword").value.trim();
+
+    // 密碼規則驗證
+    const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,20}$/;
+    if (!newPassword.match(passwordPattern)) {
+        alert("密碼必須包含至少一個大寫字母、一個小寫字母和一個數字，長度為8到20個字元");
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        alert("新密碼兩次輸入不一致");
+        return;
+    }
+
+    // 發送請求
+    fetch("/memberCenter/password/update", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword: newPassword })
+    })
+        .then(response => {
+            if (!response.ok) {
+                return response.text().then(errorMessage => { throw new Error(errorMessage); });
+            }
+            return response.text();
+        })
+        .then(() => {
+            alert("密碼更新成功！");
+            loadPassword(); // 重置密碼變更畫面
+        })
+        .catch(error => {
+            alert(error.message);
+        });
+}
+       
+
+       function loadPaymentContent() {
+    contentArea.innerHTML = `
+        <div style="max-width: 700px; margin: 20px auto; padding: 20px;">
+            <h4 class="form-title text-center mb-4">管理收/付款方式</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-secondary">我的付款方式</h5>
+                <button class="btn btn-success btn-sm" id="addPaymentMethodButton">
+                    <i class="bi bi-plus-circle"></i> 新增付款方式
+                </button>
+            </div>
+            <h5 class="mt-4">信用卡</h5>
+            <ul class="list-group mb-4" id="creditCardList">
+                <!-- 動態載入信用卡項目 -->
+            </ul>
+            <h5>銀行帳號</h5>
+            <ul class="list-group mb-4" id="bankAccountList">
+                <!-- 動態載入銀行帳號項目 -->
+            </ul>
+            <p class="text-muted text-center">您可以新增多種付款方式，並選擇預設付款方式。</p>
+        </div>
+    `;
+
+    // 動態載入付款方式
+    loadPaymentMethods();
+}
+
+function loadPaymentContent() {
+    contentArea.innerHTML = `
+        <div style="max-width: 700px; margin: 20px auto; padding: 20px;">
+            <h4 class="form-title text-center mb-4">管理收/付款方式</h4>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="text-secondary">我的付款方式</h5>
+                <button class="btn btn-success btn-sm" id="addPaymentMethodButton">
+                    <i class="bi bi-plus-circle"></i> 新增付款方式
+                </button>
+            </div>
+            <h5 class="mt-4">信用卡</h5>
+            <ul class="list-group mb-4" id="creditCardList">
+                <!-- 動態載入信用卡項目 -->
+            </ul>
+            <h5>銀行帳號</h5>
+            <ul class="list-group mb-4" id="bankAccountList">
+                <!-- 動態載入銀行帳號項目 -->
+            </ul>
+            <p class="text-muted text-center">您可以新增多種付款方式，並選擇預設付款方式。</p>
+        </div>
+
+        <!-- 新增支付方式的彈出表單 -->
+        <div id="addPaymentForm" style="display: none; background: rgba(0, 0, 0, 0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; align-items: center; justify-content: center;">
+            <div style="background: white; padding: 20px; border-radius: 8px; width: 400px;">
+                <h5 class="text-center mb-3">新增付款方式</h5>
+                <form id="paymentForm">
+                    <div class="mb-3">
+                        <label for="paymentCategory" class="form-label">付款類型</label>
+                        <select id="paymentCategory" class="form-select">
+                            <option value="1">信用卡</option>
+                            <option value="2">銀行帳戶</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentBank" class="form-label">金融機構名稱</label>
+                        <input type="text" id="paymentBank" class="form-control" placeholder="請輸入金融機構名稱">
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentAccount" class="form-label">帳號/卡號</label>
+                        <input type="text" id="paymentAccount" class="form-control" placeholder="請輸入帳號或卡號">
+                    </div>
+                    <div class="text-center">
+                        <button type="button" class="btn btn-secondary me-2" id="cancelAddPayment">取消</button>
+                        <button type="submit" class="btn btn-success">確認新增</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+
+    document.getElementById('addPaymentMethodButton').addEventListener('click', () => {
+        document.getElementById('addPaymentForm').style.display = 'flex';
+    });
+
+    document.getElementById('cancelAddPayment').addEventListener('click', () => {
+        document.getElementById('addPaymentForm').style.display = 'none';
+    });
+
+    document.getElementById('paymentForm').addEventListener('submit', submitPaymentForm);
+
+    loadPaymentMethods();
+}
+
+function submitPaymentForm(e) {
+    e.preventDefault();
+
+    const paymentData = {
+        paymentCategory: document.getElementById('paymentCategory').value,
+        paymentBank: document.getElementById('paymentBank').value,
+        paymentAccount: document.getElementById('paymentAccount').value,
+    };
+
+    fetch('/memberCenter/payment/add', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+    })
+        .then(response => {
+            if (!response.ok) {
+                // 如果非 2xx 回應，返回錯誤訊息
+                return response.json().then(err => {
+                    throw new Error(err.message || "新增付款方式失敗");
+                });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert(data.message); // 成功提示
+            document.getElementById('addPaymentForm').style.display = 'none';
+            loadPaymentMethods(); // 即時刷新列表
+        })
+        .catch(error => {
+            console.error('Error adding payment method:', error);
+            alert(error.message); // 顯示後端的錯誤訊息
+        });
+}
+
+function editPayment(paymentId) {
+    // 從後端取得該支付方式的資料
+    fetch(`/memberCenter/payment/${paymentId}`)
+        .then(response => response.json())
+        .then(data => {
+            // 填充表單資料
+            document.getElementById('paymentCategory').value = data.paymentCategory;
+            document.getElementById('paymentBank').value = data.paymentBank;
+            document.getElementById('paymentAccount').value = data.paymentAccount;
+
+            // 顯示表單
+            document.getElementById('addPaymentForm').style.display = 'flex';
+
+            // 修改表單的提交處理
+            document.getElementById('paymentForm').onsubmit = function (e) {
+                e.preventDefault();
+
+                // 取得用戶輸入的值，僅提交變更的欄位
+                const updatedPaymentData = {};
+
+                const paymentCategory = document.getElementById('paymentCategory').value;
+                if (paymentCategory !== data.paymentCategory.toString()) {
+                    updatedPaymentData.paymentCategory = parseInt(paymentCategory, 10);
+                }
+
+                const paymentBank = document.getElementById('paymentBank').value.trim();
+                if (paymentBank !== data.paymentBank) {
+                    updatedPaymentData.paymentBank = paymentBank;
+                }
+
+                const paymentAccount = document.getElementById('paymentAccount').value.trim();
+                if (paymentAccount !== data.paymentAccount) {
+                    updatedPaymentData.paymentAccount = paymentAccount;
+                }
+
+                if (Object.keys(updatedPaymentData).length === 0) {
+                    alert("未修改任何資料");
+                    return;
+                }
+
+                // 發送 PUT 請求
+                fetch(`/memberCenter/payment/update/${paymentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(updatedPaymentData),
+                })
+                    .then(response => response.json())
+                    .then(updatedData => {
+                        alert('付款方式更新成功');
+                        document.getElementById('addPaymentForm').style.display = 'none';
+                        loadPaymentMethods(); // 即時刷新列表
+                    })
+                    .catch(error => {
+                        console.error('Error updating payment method:', error);
+                        alert('更新失敗，請稍後再試');
+                    });
+            };
+        })
+        .catch(error => {
+            console.error('Error fetching payment data:', error);
+        });
+}
+
+
+
+
+
+       function loadAddressContent() {
+           contentArea.innerHTML = `
+               <h4 class="form-title">管理運送地址</h4>
+               <div style="max-width: 600px; margin: 0 auto;">
+                   <div class="d-flex justify-content-between align-items-center mb-3">
+                       <h5>我的地址</h5>
+                       <button class="btn btn-secondary" id="addAddressButton">新增地址</button>
+                   </div>
+                   <ul class="list-group mb-4">
+                       <li class="list-group-item d-flex justify-content-between align-items-center">
+                           <span>台南市永康區南台街1號</span>
+                           <div>
+                               <button class="btn btn-outline-danger btn-sm me-2">刪除</button>
+                               <button class="btn btn-outline-primary btn-sm">設為預設</button>
+                           </div>
+                       </li>
+                   </ul>
+               </div>
+           `;
+       }
+
+       document.addEventListener('click', function (event) {
+           if (event.target && event.target.id === 'togglePassword') {
+               const passwordInput = document.getElementById('password');
+               const toggleButton = event.target;
+               if (passwordInput.type === 'password') {
+                   passwordInput.type = 'text';
+                   toggleButton.textContent = '隱藏密碼';
+               } else {
+                   passwordInput.type = 'password';
+                   toggleButton.textContent = '顯示密碼';
+               }
+           }
+       });
+   </script>
+</body>
+</html>

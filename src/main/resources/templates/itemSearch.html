@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>搜尋結果</title>
+
+    <!-- 引入 Bootstrap CSS -->
+    <link th:href="@{/css/bootstrap.min.css}" rel="stylesheet">
+    <link th:href="@{/css/custom.css}" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap-icons.css">
+    <script th:src="@{/js/bootstrap.bundle.min.js}"></script>
+    <script th:src="@{/js/jquery.min.js}"></script>
+
+    <style>
+        /* 頁首樣式 */
+        header {
+            z-index: 1050;
+            position: relative;
+        }
+
+        .container-fluid {
+            width: 100%;
+        }
+
+        /* 側邊篩選條件樣式 */
+        .sidebar-container {
+            width: 300px;
+            position: fixed;
+            top: 56px;
+            left: 0;
+            bottom: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            z-index: 1040;
+        }
+
+        .main-content {
+            margin-left: 275px;
+        }
+
+        .section-container {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .latest-product-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            padding: 10px;
+        }
+
+        .product-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .product-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .product-info {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .product-name {
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .product-price {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+
+        .custom-login-button {
+            background-color: #ffd700;
+            color: #000;
+            border: 2px solid #000;
+            border-radius: 8px;
+            transition: background-color 0.2s, color 0.2s;
+        }
+
+        .custom-login-button:hover {
+            background-color: #ffcc00;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頁首區域 -->
+    <header class="p-3 bg-dark text-white">
+        <div class="container-fluid">
+            <div class="d-flex flex-wrap align-items-center justify-content-between">
+                <!-- 管理操作選單 -->
+                <ul class="nav me-auto">
+                    <li><a href="/" class="btn btn-warning text-black">CHKWGameStop</a></li>
+                </ul>
+                <!-- 搜尋欄 -->
+                <form class="d-flex justify-content-center me-auto" role="search">
+                    <input type="search" class="form-control form-control-dark me-2" placeholder="Search..." aria-label="Search" style="width: 300px;">
+                    <button type="submit" class="btn btn-outline-light">搜尋</button>
+                </form>
+                <!-- 購物車按鈕和會員操作按鈕 -->
+                <div class="text-end d-flex align-items-center">
+                    <a href="./cart.html" class="btn btn-outline-light me-2">
+                        <i class="bi bi-cart"></i> 購物車
+                    </a>
+                    <!-- Mantle 按鈕 (Dropdown) -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-light dropdown-toggle" type="button" id="mantleDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            Mantle
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="mantleDropdown">
+                            <li><a class="dropdown-item" href="./member-center.html">會員中心</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="./logout.html">購物清單</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="./logout.html">登出</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 左側篩選條件區域 -->
+    <div class="sidebar-container">
+    <br>
+    <h4 class="text-center">篩選條件</h4>
+    <form>
+    <br>
+        <div class="mb-3">
+            <label for="priceRange" class="form-label">價格範圍</label>
+            <div class="d-flex align-items-center">
+                <input type="number" class="form-control me-2" id="minPrice" placeholder="最低價">
+                <span>至</span>
+                <input type="number" class="form-control ms-2" id="maxPrice" placeholder="最高價">
+            </div>
+        </div>
+        <br>
+        <div class="mb-3">
+            <label for="categorySelect" class="form-label">商品分類</label>
+            <select id="categorySelect" class="form-select">
+                <option selected>選擇分類</option>
+                <option>分類 1</option>
+                <option>分類 2</option>
+                <option>分類 3</option>
+            </select>
+        </div>
+        <br>
+        <div class="mb-3">
+            <label class="form-label">品牌</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brand1">
+                <label class="form-check-label" for="brand1">品牌 1</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brand2">
+                <label class="form-check-label" for="brand2">品牌 2</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brand2">
+                <label class="form-check-label" for="brand2">品牌 3</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brand2">
+                <label class="form-check-label" for="brand2">品牌 4</label>
+            </div>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="brand2">
+                <label class="form-check-label" for="brand2">品牌 5</label>
+            </div>
+        </div>
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">應用篩選</button>
+        </div>
+    </form>
+</div>
+
+
+    <!-- 主內容區 -->
+    <div class="main-content">
+        <div class="container my-4">
+            <section class="section-container my-4">
+                <h3 class="text-center">搜尋結果</h3>
+                <div class="latest-product-grid">
+                    <!-- 商品卡片 -->
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 1</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 2</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 3</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 4</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 5</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 6</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 7</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 8</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 9</h5><p class="product-price">NT$ 2,800</p></div></a>
+                    <a href="#" class="product-item"><div class="gray-placeholder"><img src="https://via.placeholder.com/150" class="img-fluid rounded"></div><div class="product-info"><h5 class="product-name">商品名稱 10</h5><p class="product-price">NT$ 2,800</p></div></a>
+                </div>
+            </section>
+
+            <div class="text-center">
+                <a href="/login" class="btn custom-login-button btn-lg">登入以查看更多</a>
+            </div>
+        </div>
+    </div>
+
+    
+</body>
+</html>

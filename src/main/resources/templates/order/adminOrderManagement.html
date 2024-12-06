@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訂單管理</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .main-content {
+            padding: 20px;
+        }
+        .navbar {
+            margin-bottom: 20px;
+        }
+        .page-title {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 頂部導航欄 -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#">管理員系統</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/order-management">訂單管理</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/shipping-tracking">物流追蹤</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <h1 class="page-title">訂單管理</h1>
+
+        <!-- 查詢欄 -->
+        <form id="searchForm" class="mb-3">
+            <div class="row">
+                <div class="col-md-4">
+                    <label for="statusFilter" class="form-label">訂單狀態</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">全部</option>
+                        <option value="Pending">待處理</option>
+                        <option value="In Progress">處理中</option>
+                        <option value="Shipped">已發貨</option>
+                        <option value="Delivered">已送達</option>
+                        <option value="Canceled">已取消</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label for="buyerIdFilter" class="form-label">買家 ID</label>
+                    <input type="number" id="buyerIdFilter" class="form-control" placeholder="輸入買家 ID">
+                </div>
+                <div class="col-md-4">
+                    <label for="sellerIdFilter" class="form-label">賣家 ID</label>
+                    <input type="number" id="sellerIdFilter" class="form-control" placeholder="輸入賣家 ID">
+                </div>
+            </div>
+            <div class="mt-3">
+                <button type="button" class="btn btn-primary" onclick="searchOrders()">查詢</button>
+                <button type="reset" class="btn btn-secondary" onclick="resetFilters()">重置</button>
+            </div>
+        </form>
+
+        <!-- 訂單表格 -->
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>訂單編號</th>
+                    <th>訂單狀態</th>
+                    <th>總金額</th>
+                    <th>買家ID</th>
+                    <th>賣家ID</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="orderTable">
+                <!-- 動態數據插入 -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 訂單詳情模態框 -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1" aria-labelledby="orderDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="orderDetailModalLabel">訂單詳情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>訂單編號：</strong> <span id="modalOrderNumber"></span></p>
+                    <p><strong>訂單狀態：</strong> <span id="modalOrderStatus"></span></p>
+                    <p><strong>總金額：</strong> $<span id="modalOrderTotal"></span></p>
+                    <p><strong>買家 ID：</strong> <span id="modalBuyerId"></span></p>
+                    <p><strong>賣家 ID：</strong> <span id="modalSellerId"></span></p>
+                    <p><strong>下單時間：</strong> <span id="modalOrderDate"></span></p>
+                    <div class="mb-3">
+                        <label for="modalOrderStatusUpdate" class="form-label">更新訂單狀態</label>
+                        <select id="modalOrderStatusUpdate" class="form-select">
+                            <option value="Pending">待處理</option>
+                            <option value="In Progress">處理中</option>
+                            <option value="Shipped">已發貨</option>
+                            <option value="Delivered">已送達</option>
+                            <option value="Canceled">已取消</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">關閉</button>
+                    <button type="button" class="btn btn-primary" onclick="saveOrderChanges()">保存更改</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const orderTable = document.getElementById("orderTable");
+
+            function loadOrders(filters = {}) {
+                const params = new URLSearchParams(filters).toString();
+                fetch(`/admin/orders?${params}`)
+                    .then(response => response.json())
+                    .then(orders => {
+                        orderTable.innerHTML = "";
+                        orders.forEach(order => {
+                            const row = `
+                                <tr>
+                                    <td>${order.id}</td>
+                                    <td>${order.orderNumber}</td>
+                                    <td>${order.status}</td>
+                                    <td>${order.total}</td>
+                                    <td>${order.buyerId}</td>
+                                    <td>${order.sellerId}</td>
+                                    <td>
+                                        <button class="btn btn-primary btn-sm" onclick="editOrder(${order.id})">詳情</button>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteOrder(${order.id})">刪除</button>
+                                    </td>
+                                </tr>`;
+                            orderTable.insertAdjacentHTML("beforeend", row);
+                        });
+                    })
+                    .catch(error => console.error("Error loading orders:", error));
+            }
+
+            window.searchOrders = () => {
+                const status = document.getElementById("statusFilter").value;
+                const buyerId = document.getElementById("buyerIdFilter").value;
+                const sellerId = document.getElementById("sellerIdFilter").value;
+
+                const filters = {};
+                if (status) filters.status = status;
+                if (buyerId) filters.buyerId = buyerId;
+                if (sellerId) filters.sellerId = sellerId;
+
+                loadOrders(filters);
+            };
+
+            window.resetFilters = () => {
+                document.getElementById("statusFilter").value = "";
+                document.getElementById("buyerIdFilter").value = "";
+                document.getElementById("sellerIdFilter").value = "";
+                loadOrders();
+            };
+
+            window.deleteOrder = (orderId) => {
+                if (confirm("確定要刪除此訂單嗎？")) {
+                    fetch(`/admin/orders/${orderId}`, {
+                        method: "DELETE"
+                    })
+                        .then(response => {
+                            if (response.ok) {
+                                alert("訂單已刪除");
+                                loadOrders();
+                            } else {
+                                alert("刪除失敗，請稍後重試");
+                            }
+                        })
+                        .catch(error => console.error("Error deleting order:", error));
+                }
+            };
+
+            window.editOrder = (orderId) => {
+                fetch(`/admin/orders/${orderId}`)
+                    .then(response => response.json())
+                    .then(order => {
+                        document.getElementById("modalOrderNumber").innerText = order.orderNumber;
+                        document.getElementById("modalOrderStatus").innerText = order.status;
+                        document.getElementById("modalOrderTotal").innerText = order.total.toFixed(2);
+                        document.getElementById("modalBuyerId").innerText = order.buyerId;
+                        document.getElementById("modalSellerId").innerText = order.sellerId;
+                        document.getElementById("modalOrderDate").innerText = order.orderDate;
+                        document.getElementById("modalOrderStatusUpdate").value = order.status;
+
+                        document.getElementById("orderDetailModal").setAttribute("data-order-id", order.id);
+                        const modal = new bootstrap.Modal(document.getElementById("orderDetailModal"));
+                        modal.show();
+                    })
+                    .catch(error => console.error("Error fetching order details:", error));
+            };
+
+            window.saveOrderChanges = () => {
+                const modal = document.getElementById("orderDetailModal");
+                const orderId = modal.getAttribute("data-order-id");
+                const newStatus = document.getElementById("modalOrderStatusUpdate").value;
+
+                const updatedOrder = {
+                    status: newStatus,
+                };
+
+                fetch(`/admin/orders/${orderId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(updatedOrder),
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert("訂單狀態已更新並同步影響物流追蹤");
+                            const modalInstance = bootstrap.Modal.getInstance(modal);
+                            modalInstance.hide();
+                            loadOrders();
+                        } else {
+                            alert("更新失敗，請稍後重試");
+                        }
+                    })
+                    .catch(error => console.error("Error updating order status:", error));
+            };
+
+            loadOrders();
+        });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

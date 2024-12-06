@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org/">
+<head>
+<meta charset="UTF-8">
+<title>商品列表</title>
+</head>
+<body>
+
+	<div th:replace="~{layout/saHeader}"></div>
+
+
+	<main>
+		<div class="container-fluid" style="background-color: lightgrey">
+			<div class="row">
+				<nav id="sidebarMenu"
+					class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+					<div class="position-sticky pt-3">
+						<ul class="nav flex-column">
+							<h6
+								class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+								<span>我的商品</span>
+							</h6>
+							<li class="nav-item"><a class="nav-link"
+								href="<%=request.getContextPath()%>/list"> <svg
+										xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round" class="feather feather-file"
+										aria-hidden="true">
+                      <path
+											d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                      <polyline points="13 2 13 9 20 9"></polyline>
+                    </svg> 我的商品
+							</a></li>
+							<li class="nav-item"><a class="nav-link"
+								href="<%=request.getContextPath()%>/new"> <svg
+										xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2" stroke-linecap="round"
+										stroke-linejoin="round" class="feather feather-shopping-cart"
+										aria-hidden="true">
+                      <circle cx="9" cy="21" r="1"></circle>
+                      <circle cx="20" cy="21" r="1"></circle>
+                      <path
+											d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                    </svg> 新增商品
+							</a></li>
+						</ul>
+					</div>
+				</nav>
+
+				<main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+					<div class="chartjs-size-monitor">
+						<div class="chartjs-size-monitor-expand">
+							<div class=""></div>
+						</div>
+						<div class="chartjs-size-monitor-shrink">
+							<div class=""></div>
+						</div>
+					</div>
+					<div
+						class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+						<h1 class="h2">編輯商品</h1>
+					</div>
+					<div class="container-fluid" id="itemcontainer">
+						<form th:action="@{/item/editItemPost}" th:object="${item}"
+							method="post">
+
+							<fieldset class="form-group">
+								<label>Item Name</label> <input type="text"
+									th:value="${item.itemName}" class="form-control"
+									name="itemName" required="required">
+							</fieldset>
+
+							<fieldset class="form-group">
+								<label>Price</label> <input type="text"
+									th:value="${item.itemPrice}" class="form-control"
+									name="itemPrice">
+							</fieldset>
+
+							<fieldset class="form-group">
+								<label>Location</label> <input type="text"
+									th:value="${item.itemLocation}" class="form-control"
+									name="itemLocation">
+							</fieldset>
+
+							<fieldset class="form-group">
+								<label>Brand</label> <input type="text"
+									th:value="${item.itemBrandId}" class="form-control"
+									name="itemBrand">
+							</fieldset>
+
+							<fieldset class="form-group">
+								<!-- 顯示 Label -->
+								<label>Category</label>
+								<br>
+
+								<!-- 用容器包裹按鈕和下拉選單 -->
+								<div
+									style="margin-top: 5px; position: relative; display: inline-block; width: 100%; max-width: 300px;">
+									<!-- 按鈕 -->
+									<button type="button" class="btn btn-secondary dropdown-toggle"
+										id="dropdownMenuOffset" data-bs-toggle="dropdown"
+										aria-expanded="false" data-bs-offset="10,20"
+										style="width: 100%; text-align: left; height: 40px;">選擇分類</button>
+
+									<!-- 下拉選單 -->
+									<ul class="dropdown-menu" aria-labelledby="dropdownMenuOffset"
+										style="width: 100%; margin-top: 5px;">
+										<th:block th:each="c : ${categorylist}">
+											<li><a href="#" class="dropdown-item"
+												th:text="${c.categoryName}"
+												th:attr="data-category-id=${c.categoryId}"
+												onclick="setCategory(this)"></a></li>
+										</th:block>
+									</ul>
+								</div>
+
+								<!-- 隱藏輸入框，用於提交選中的分類ID -->
+								<input type="hidden" th:value="${item.itemCategoryId}"
+									class="form-control" name="itemCategory">
+							</fieldset>
+
+
+
+
+							<fieldset class="form-group">
+								<label>Info</label> <input type="text"
+									th:value="${item.itemInfo}" class="form-control"
+									name="itemInfo">
+							</fieldset>
+							<br>
+							<button type="submit" class="btn btn-primary">送出</button>
+
+						</form>
+
+					</div>
+
+
+				</main>
+			</div>
+		</div>
+	</main>
+
+	<script>
+   function setCategory(element) {
+    // 獲取點擊項目的文字內容和分類ID
+    const categoryName = element.textContent || element.innerText;
+    const categoryId = element.getAttribute("data-category-id");
+
+    // 更新按鈕的文字
+    document.getElementById("dropdownMenuOffset").textContent = categoryName;
+
+    // 更新隱藏輸入框的值
+    document.querySelector("input[name='itemCategory']").value = categoryId;
+}
+
+</script>
+
+
+
+</body>
+</html>
